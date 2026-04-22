@@ -20,15 +20,15 @@ def admin_keyboard() -> types.InlineKeyboardMarkup:
         [types.InlineKeyboardButton(text="📊 Statistika", callback_data="adm_stats")],
         [types.InlineKeyboardButton(text="📣 Hammaga xabar", callback_data="adm_broadcast")],
         [types.InlineKeyboardButton(text="✉️ Bitta foydalanuvchiga xabar", callback_data="adm_dm")],
-        [types.InlineKeyboardButton(text="🔎 Foydalanuvchi haqida ma\'lumot", callback_data="adm_userinfo")],
+        [types.InlineKeyboardButton(text="🔎 Foydalanuvchi haqida ma'lumot", callback_data="adm_userinfo")],
         [types.InlineKeyboardButton(text="💎 Premium berish", callback_data="adm_give_premium")],
         [types.InlineKeyboardButton(text="🚫 Premiumni olib tashlash", callback_data="adm_remove_premium")],
-        [types.InlineKeyboardButton(text="🔢 Limit o\'rnatish", callback_data="adm_set_limit")],
+        [types.InlineKeyboardButton(text="🔢 Limit o'rnatish", callback_data="adm_set_limit")],
         [types.InlineKeyboardButton(text="♻️ Hammaning limitini reset qilish", callback_data="adm_reset_limits")],
         [types.InlineKeyboardButton(text="⛔ Bloklash", callback_data="adm_block")],
         [types.InlineKeyboardButton(text="✅ Blokdan chiqarish", callback_data="adm_unblock")],
         [types.InlineKeyboardButton(text="🎟 Promo-kod yaratish", callback_data="adm_promo")],
-        [types.InlineKeyboardButton(text="👥 So\'nggi foydalanuvchilar", callback_data="adm_recent")],
+        [types.InlineKeyboardButton(text="👥 So'nggi foydalanuvchilar", callback_data="adm_recent")],
     ])
 
 
@@ -54,7 +54,7 @@ async def cmd_admin(message: Message):
 @admin_router.callback_query(F.data.startswith("adm_"))
 async def admin_cb(cb: CallbackQuery, state: FSMContext):
     if not is_admin(cb.from_user.id):
-        await cb.answer("Sizda ruxsat yo\'q.", show_alert=True); return
+        await cb.answer("Sizda ruxsat yo'q.", show_alert=True); return
     action = cb.data[4:]
 
     if action == "stats":
@@ -100,13 +100,13 @@ async def admin_cb(cb: CallbackQuery, state: FSMContext):
     elif action == "recent":
         users = await db.get_recent_users(15)
         if not users:
-            await cb.message.answer("Foydalanuvchilar yo\'q.")
+            await cb.message.answer("Foydalanuvchilar yo'q.")
         else:
-            text = "👥 <b>So\'nggi foydalanuvchilar:</b>\n\n"
+            text = "👥 <b>So'nggi foydalanuvchilar:</b>\n\n"
             for u in users:
                 star = "💎" if u["is_premium"] else "🆓"
-                uname = f"@{u["username"]}" if u["username"] else (u["first_name"] or "—")
-                text += f"{star} <code>{u["id"]}</code> · {uname} · {u["created_at"]}\n"
+                uname = f"@{u['username']}" if u["username"] else (u["first_name"] or "—")
+                text += f"{star} <code>{u['id']}</code> · {uname} · {u['created_at']}\n"
             await cb.message.answer(text)
     await cb.answer()
 
@@ -129,7 +129,7 @@ async def do_broadcast(message: Message, state: FSMContext):
 async def dm_uid(message: Message, state: FSMContext):
     try: uid = int(message.text.strip())
     except ValueError:
-        await message.answer("ID raqam bo\'lishi kerak."); await state.clear(); return
+        await message.answer("ID raqam bo'lishi kerak."); await state.clear(); return
     await state.update_data(uid=uid)
     await message.answer("Endi xabar matnini yozing:")
     await state.set_state(AdminStates.dm_text)
@@ -150,18 +150,18 @@ async def dm_send(message: Message, state: FSMContext):
 async def show_userinfo(message: Message, state: FSMContext):
     try: uid = int(message.text.strip())
     except ValueError:
-        await message.answer("ID raqam bo\'lishi kerak."); await state.clear(); return
+        await message.answer("ID raqam bo'lishi kerak."); await state.clear(); return
     u = await db.get_user(uid)
     if not u:
         await message.answer("Topilmadi.")
     else:
         await message.answer(
-            f"🔎 <b>Foydalanuvchi</b>\n\nID: <code>{u["id"]}</code>\nUsername: @{u["username"] or "—"}\n"
-            f"Ism: {u["first_name"] or "—"} {u["last_name"] or ""}\nTil: {u["language_code"]}\n"
-            f"Premium: {"Ha 💎" if u["is_premium"] else "Yo\'q"}\nPremium tugashi: {u["premium_until"] or "—"}\n"
-            f"Limit: {u["daily_limit"]}\nReferrals: {u["referrals_count"]}\n"
-            f"Ro\'yxatdan o\'tgan: {u["created_at"]}\nBloklangan: {"Ha ⛔" if u["is_blocked"] else "Yo\'q"}\n"
-            f"Eslatma: {u["user_notes"] or "—"}"
+            f"🔎 <b>Foydalanuvchi</b>\n\nID: <code>{u['id']}</code>\nUsername: @{u['username'] or '—'}\n"
+            f"Ism: {u['first_name'] or '—'} {u['last_name'] or ''}\nTil: {u['language_code']}\n"
+            f"Premium: {'Ha 💎' if u['is_premium'] else 'Yoq'}\nPremium tugashi: {u['premium_until'] or '—'}\n"
+            f"Limit: {u['daily_limit']}\nReferrals: {u['referrals_count']}\n"
+            f"Ro'yxatdan o'tgan: {u['created_at']}\nBloklangan: {'Ha ⛔' if u['is_blocked'] else 'Yoq'}\n"
+            f"Eslatma: {u['user_notes'] or '—'}"
         )
     await state.clear()
 
@@ -170,16 +170,17 @@ async def show_userinfo(message: Message, state: FSMContext):
 async def give_premium_id(message: Message, state: FSMContext):
     try: uid = int(message.text.strip())
     except ValueError:
-        await message.answer("ID raqam bo\'lishi kerak."); await state.clear(); return
+        await message.answer("ID raqam bo'lishi kerak."); await state.clear(); return
     await state.update_data(uid=uid)
     await message.answer("Necha kunga premium berilsin?")
     await state.set_state(AdminStates.give_premium_days)
+
 
 @admin_router.message(AdminStates.give_premium_days)
 async def give_premium_days(message: Message, state: FSMContext):
     try: days = int(message.text.strip())
     except ValueError:
-        await message.answer("Kunlar soni raqam bo\'lishi kerak."); await state.clear(); return
+        await message.answer("Kunlar soni raqam bo'lishi kerak."); await state.clear(); return
     data = await state.get_data()
     uid = data["uid"]
     user = await db.get_user(uid)
@@ -204,7 +205,7 @@ async def give_premium_days(message: Message, state: FSMContext):
 async def remove_premium(message: Message, state: FSMContext):
     try: uid = int(message.text.strip())
     except ValueError:
-        await message.answer("ID raqam bo\'lishi kerak."); await state.clear(); return
+        await message.answer("ID raqam bo'lishi kerak."); await state.clear(); return
     await db.update_user_premium(uid, False, None)
     await message.answer(f"✅ {uid} dan premium olib tashlandi.")
     await state.clear()
@@ -214,20 +215,21 @@ async def remove_premium(message: Message, state: FSMContext):
 async def set_limit_id(message: Message, state: FSMContext):
     try: uid = int(message.text.strip())
     except ValueError:
-        await message.answer("ID raqam bo\'lishi kerak."); await state.clear(); return
+        await message.answer("ID raqam bo'lishi kerak."); await state.clear(); return
     await state.update_data(uid=uid)
     await message.answer("Yangi limit qiymatini yozing:")
     await state.set_state(AdminStates.set_limit_value)
+
 
 @admin_router.message(AdminStates.set_limit_value)
 async def set_limit_value(message: Message, state: FSMContext):
     try: limit = int(message.text.strip())
     except ValueError:
-        await message.answer("Limit raqam bo\'lishi kerak."); await state.clear(); return
+        await message.answer("Limit raqam bo'lishi kerak."); await state.clear(); return
     data = await state.get_data()
     uid = data["uid"]
     await db.set_user_daily_limit(uid, limit)
-    await message.answer(f"✅ {uid} uchun kunlik limit {limit} ga o\'rnatildi.")
+    await message.answer(f"✅ {uid} uchun kunlik limit {limit} ga o'rnatildi.")
     await state.clear()
 
 
@@ -235,7 +237,7 @@ async def set_limit_value(message: Message, state: FSMContext):
 async def reset_limits(message: Message, state: FSMContext):
     try: limit = int(message.text.strip())
     except ValueError:
-        await message.answer("Limit raqam bo\'lishi kerak."); await state.clear(); return
+        await message.answer("Limit raqam bo'lishi kerak."); await state.clear(); return
     await db.reset_all_daily_limits(limit)
     await message.answer(f"✅ Barcha free foydalanuvchilarning kunlik limiti {limit} ga reset qilindi.")
     await state.clear()
@@ -245,7 +247,7 @@ async def reset_limits(message: Message, state: FSMContext):
 async def block_user(message: Message, state: FSMContext):
     try: uid = int(message.text.strip())
     except ValueError:
-        await message.answer("ID raqam bo\'lishi kerak."); await state.clear(); return
+        await message.answer("ID raqam bo'lishi kerak."); await state.clear(); return
     await db.set_user_blocked(uid, True)
     await message.answer(f"✅ {uid} bloklandi.")
     await state.clear()
@@ -255,7 +257,7 @@ async def block_user(message: Message, state: FSMContext):
 async def unblock_user(message: Message, state: FSMContext):
     try: uid = int(message.text.strip())
     except ValueError:
-        await message.answer("ID raqam bo\'lishi kerak."); await state.clear(); return
+        await message.answer("ID raqam bo'lishi kerak."); await state.clear(); return
     await db.set_user_blocked(uid, False)
     await message.answer(f"✅ {uid} blokdan chiqarildi.")
     await state.clear()
@@ -265,39 +267,42 @@ async def unblock_user(message: Message, state: FSMContext):
 async def promo_code(message: Message, state: FSMContext):
     code = message.text.strip()
     if not code:
-        await message.answer("Promo-kod bo\'sh bo\'lmasligi kerak."); await state.clear(); return
+        await message.answer("Promo-kod bo'sh bo'lmasligi kerak."); await state.clear(); return
     await state.update_data(code=code)
-    await message.answer("Premium kunlari sonini yozing (0 bo\'lsa, premium berilmaydi):")
+    await message.answer("Premium kunlari sonini yozing (0 bo'lsa, premium berilmaydi):")
     await state.set_state(AdminStates.promo_days)
+
 
 @admin_router.message(AdminStates.promo_days)
 async def promo_days(message: Message, state: FSMContext):
     try: days = int(message.text.strip())
     except ValueError:
-        await message.answer("Kunlar soni raqam bo\'lishi kerak."); await state.clear(); return
+        await message.answer("Kunlar soni raqam bo'lishi kerak."); await state.clear(); return
     await state.update_data(days=days)
-    await message.answer("Qo\'shimcha so\'rovlar sonini yozing (0 bo\'lsa, qo\'shilmaydi):")
+    await message.answer("Qo'shimcha so'rovlar sonini yozing (0 bo'lsa, qo'shilmaydi):")
     await state.set_state(AdminStates.promo_reqs)
+
 
 @admin_router.message(AdminStates.promo_reqs)
 async def promo_reqs(message: Message, state: FSMContext):
     try: reqs = int(message.text.strip())
     except ValueError:
-        await message.answer("So\'rovlar soni raqam bo\'lishi kerak."); await state.clear(); return
+        await message.answer("So'rovlar soni raqam bo'lishi kerak."); await state.clear(); return
     await state.update_data(reqs=reqs)
     await message.answer("Necha marta ishlatilishi mumkin (0 cheksiz):")
     await state.set_state(AdminStates.promo_uses)
+
 
 @admin_router.message(AdminStates.promo_uses)
 async def promo_uses(message: Message, state: FSMContext):
     try: uses = int(message.text.strip())
     except ValueError:
-        await message.answer("Ishlatilish soni raqam bo\'lishi kerak."); await state.clear(); return
+        await message.answer("Ishlatilish soni raqam bo'lishi kerak."); await state.clear(); return
     data = await state.get_data()
     code = data["code"]
     days = data["days"]
     reqs = data["reqs"]
     
     await db.create_promo(code, days, reqs, uses)
-    await message.answer(f"✅ Promo-kod {code} yaratildi. {days} kun premium, {reqs} so\'rov, {uses} marta ishlatilishi mumkin.")
+    await message.answer(f"✅ Promo-kod {code} yaratildi. {days} kun premium, {reqs} so'rov, {uses} marta ishlatilishi mumkin.")
     await state.clear()

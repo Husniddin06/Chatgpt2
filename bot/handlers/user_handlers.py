@@ -221,7 +221,7 @@ async def cmd_bonus(message: Message):
 async def cmd_stats(message: Message):
     user = await db.get_user(message.from_user.id) or await _get_or_create(message)
     if user.get("is_premium"):
-        status = f"💎 Premium (gacha: {user.get("premium_until") or '—'})"
+        status = f"💎 Premium (gacha: {user.get('premium_until') or '—'})"
     else:
         status = "🆓 Free"
     await message.answer(_t("stats",
