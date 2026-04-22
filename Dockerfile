@@ -12,8 +12,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Qolgan kodni nusxalash
 COPY . .
 
-# PYTHONPATH ni /app va /app/bot qilib belgilash
-ENV PYTHONPATH=/app:/app/bot
+# PYTHONPATH ni /app qilib belgilash
+ENV PYTHONPATH=/app
 
-# Botni ishga tushirish
-CMD ["python", "bot/main.py"]
+# Botni modul sifatida ishga tushirish
+CMD ["python", "-m", "bot.main"]
