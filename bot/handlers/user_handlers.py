@@ -6,16 +6,41 @@ from aiogram.filters import CommandStart, Command, CommandObject
 from aiogram.enums import ChatAction
 from datetime import datetime, timedelta
 
-from bot.database import db
-from bot.utils.openai_utils import (
-    get_chat_response, generate_image, analyze_image_and_chat, transcribe_audio,
-)
-from bot.utils.keyboards import (
-    main_menu, lang_keyboard,
-    BTN_BALANCE, BTN_CLEAR, BTN_IMAGE, BTN_PREMIUM,
-    BTN_HELP, BTN_REF, BTN_LANG, BTN_BONUS,
-)
-from bot.config import DAILY_BONUS
+# Railway va Docker uchun importlarni to'g'rilash
+try:
+    from database import db
+    from utils.openai_utils import (
+        get_chat_response, generate_image, analyze_image_and_chat, transcribe_audio,
+    )
+    from utils.keyboards import (
+        main_menu, lang_keyboard,
+        BTN_BALANCE, BTN_CLEAR, BTN_IMAGE, BTN_PREMIUM,
+        BTN_HELP, BTN_REF, BTN_LANG, BTN_BONUS,
+    )
+    from config import DAILY_BONUS
+except ImportError:
+    try:
+        from ..database import db
+        from ..utils.openai_utils import (
+            get_chat_response, generate_image, analyze_image_and_chat, transcribe_audio,
+        )
+        from ..utils.keyboards import (
+            main_menu, lang_keyboard,
+            BTN_BALANCE, BTN_CLEAR, BTN_IMAGE, BTN_PREMIUM,
+            BTN_HELP, BTN_REF, BTN_LANG, BTN_BONUS,
+        )
+        from ..config import DAILY_BONUS
+    except (ImportError, ValueError):
+        from bot.database import db
+        from bot.utils.openai_utils import (
+            get_chat_response, generate_image, analyze_image_and_chat, transcribe_audio,
+        )
+        from bot.utils.keyboards import (
+            main_menu, lang_keyboard,
+            BTN_BALANCE, BTN_CLEAR, BTN_IMAGE, BTN_PREMIUM,
+            BTN_HELP, BTN_REF, BTN_LANG, BTN_BONUS,
+        )
+        from bot.config import DAILY_BONUS
 
 logger = logging.getLogger(__name__)
 user_router = Router()
@@ -39,7 +64,7 @@ T = {
         "promo_used": "⚠️ Bu promo-kodni allaqachon ishlatgansiz.",
         "bonus_ok": "🎁 Bonus olindi: +{n} so'rov!",
         "bonus_done": "Bugungi bonusni allaqachon olgansiz. Ertaga qaytib keling.",
-        "ref_invite": "👥 Do'stlaringizni taklif qiling!\nHar bir do'stingiz uchun +5 so'rov olasiz.\n\nSizning havolangiz:\n{link}\n\nTaklif qilinganlar: {n}",
+        "ref_invite": "👥 Do'stlarni taklif qiling!\nHar bir do'stingiz uchun +5 so'rov olasiz.\n\nSizning havolangiz:\n{link}\n\nTaklif qilinganlar: {n}",
         "ref_reward": "🎉 Yangi do'st qo'shildi! +5 so'rov hadya qilindi.",
         "stats": "📊 <b>Sizning hisobingiz</b>\n\nStatus: {status}\nKunlik so'rovlar: {limit}\nDo'stlar: {refs}\nTil: {lang}",
         "help": "🆘 <b>SmartAI yordam</b>\n\n💬 Savolingizni yozing — AI javob beradi\n🎙 Ovoz xabar yuboring — matn qilib javob beraman\n🖼 Rasm yuboring — tahlil qilaman\n📄 PDF/TXT yuboring — hujjatni tahlil qilaman\n🎨 \"rasm ...\" deb yozing — rasm yarataman\n🔎 /search so'rov — internetdan qidiraman\n\nKomandalar: /start /image /search /stats /bonus /ref /lang /promo /premium /clear",
