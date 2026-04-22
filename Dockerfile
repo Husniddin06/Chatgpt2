@@ -9,11 +9,11 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Qolgan kodni nusxalash
-COPY . .
+# Bot papkasi ichidagi hamma narsani /app ga nusxalash
+COPY bot/ .
 
 # PYTHONPATH ni /app qilib belgilash
 ENV PYTHONPATH=/app
 
-# Botni modul sifatida ishga tushirish
-CMD ["python", "-m", "bot.main"]
+# Botni ishga tushirish
+CMD ["python", "main.py"]

@@ -5,8 +5,13 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from datetime import datetime, timedelta
 
-from bot.config import ADMIN_ID
-from bot.database import db
+# Railway uchun importlarni to'g'rilash
+try:
+    from config import ADMIN_ID
+    from database import db
+except ImportError:
+    from bot.config import ADMIN_ID
+    from bot.database import db
 
 admin_router = Router()
 
