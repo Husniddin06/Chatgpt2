@@ -3,18 +3,26 @@ import logging
 import sys
 import os
 
-# PYTHONPATH ni to'g'rilash (Railway uchun muhim)
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# PYTHONPATH ni to'g'rilash
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
 from aiogram.types import BotCommand
-from bot.config import BOT_TOKEN
-from bot.database.db import init_db, init_extras
-from bot.handlers.user_handlers import user_router
-from bot.handlers.admin_handlers import admin_router
-from bot.utils.scheduler import start_scheduler
+
+try:
+    from config import BOT_TOKEN
+    from database.db import init_db, init_extras
+    from handlers.user_handlers import user_router
+    from handlers.admin_handlers import admin_router
+    from utils.scheduler import start_scheduler
+except ImportError:
+    from bot.config import BOT_TOKEN
+    from bot.database.db import init_db, init_extras
+    from bot.handlers.user_handlers import user_router
+    from bot.handlers.admin_handlers import admin_router
+    from bot.utils.scheduler import start_scheduler
 
 
 async def set_commands(bot: Bot):

@@ -6,16 +6,28 @@ from aiogram.filters import CommandStart, Command, CommandObject
 from aiogram.enums import ChatAction
 from datetime import datetime, timedelta
 
-from bot.database import db
-from bot.utils.openai_utils import (
-    get_chat_response, generate_image, analyze_image_and_chat, transcribe_audio,
-)
-from bot.utils.keyboards import (
-    main_menu, lang_keyboard,
-    BTN_BALANCE, BTN_CLEAR, BTN_IMAGE, BTN_PREMIUM,
-    BTN_HELP, BTN_REF, BTN_LANG, BTN_BONUS,
-)
-from bot.config import DAILY_BONUS
+try:
+    from database import db
+    from utils.openai_utils import (
+        get_chat_response, generate_image, analyze_image_and_chat, transcribe_audio,
+    )
+    from utils.keyboards import (
+        main_menu, lang_keyboard,
+        BTN_BALANCE, BTN_CLEAR, BTN_IMAGE, BTN_PREMIUM,
+        BTN_HELP, BTN_REF, BTN_LANG, BTN_BONUS,
+    )
+    from config import DAILY_BONUS
+except ImportError:
+    from bot.database import db
+    from bot.utils.openai_utils import (
+        get_chat_response, generate_image, analyze_image_and_chat, transcribe_audio,
+    )
+    from bot.utils.keyboards import (
+        main_menu, lang_keyboard,
+        BTN_BALANCE, BTN_CLEAR, BTN_IMAGE, BTN_PREMIUM,
+        BTN_HELP, BTN_REF, BTN_LANG, BTN_BONUS,
+    )
+    from bot.config import DAILY_BONUS
 
 logger = logging.getLogger(__name__)
 user_router = Router()
@@ -234,144 +246,3 @@ async def cmd_stats(message: Message):
 async def cmd_clear(message: Message):
     await db.clear_conversation_history(message.from_user.id)
     await message.answer(_t("history_clear"))
-
-
-@user_router.message(Command("image"))
-@user_router.message(F.text.startswith(("rasm", "image")))
-async def cmd_image(message: Message):
-    user = await _check_access(message)
-    if not user: return
-    if message.text.lower().strip() in ["rasm", "image"]:
-        await message.answer(_t("image_prompt", user.get("language_code", "uz"))); return
-    prompt = message.text[message.text.find(" ") + 1:]
-    await message.bot.send_chat_action(message.from_user.id, ChatAction.UPLOAD_PHOTO)
-    url = await generate_image(prompt)
-    await message.answer_photo(url)
-    await _consume(user)
-
-
-@user_router.message(Command("promo"))
-async def cmd_promo(message: Message, command: CommandObject):
-    user = await _check_access(message)
-    if not user: return
-    if not command.args:
-        await message.answer(_t("promo_usage")); return
-    res = await db.redeem_promo(message.from_user.id, command.args.strip())
-    if res is None:
-        await message.answer(_t("promo_bad"))
-    elif res == "already":
-        await message.answer(_t("promo_used"))
-    else:
-        msg = "🎉 Promo-kod faollashtirildi!\n"
-        if res["premium_days"]: msg += f"💎 +{res['premium_days']} kun premium\n"
-        if res["extra_requests"]: msg += f"➕ +{res['extra_requests']} so'rov"
-        await message.answer(msg)
-
-@user_router.message(Command("search"))
-async def cmd_search(message: Message, command: CommandObject):
-    if not command.args:
-        await message.answer(_t("search_usage")); return
-    user = await _check_access(message)
-    if not user: return
-    query = command.args.strip()
-    await message.bot.send_chat_action(message.from_user.id, ChatAction.TYPING)
-    try:
-        from duckduckgo_search import DDGS
-        results = DDGS().text(query, max_results=5)
-    except Exception as e:
-        logger.error(f"Search error: {e}")
-        await message.answer("❌ Qidiruv xatosi."); return
-    if not results:
-        await message.answer(_t("search_empty")); return
-    text = f"🔎 <b>{query}</b>\n\n"
-    for r in results:
-        text += f"• <a href=\"{r.get('href','')}\">{r.get('title','')}</a>\n{(r.get('body','') or '')[:160]}...\n\n"
-    await message.answer(text, disable_web_page_preview=True)
-    await _consume(user)
-
-@user_router.message(F.photo)
-async def handle_photo(message: Message):
-    user = await _check_access(message)
-    if not user: return
-    photo = message.photo[-1]
-    file = await message.bot.get_file(photo.file_id)
-    photo_bytes = await message.bot.download_file(file.file_path)
-    await message.bot.send_chat_action(message.from_user.id, ChatAction.TYPING)
-    resp = await analyze_image_and_chat(message.caption, photo_bytes.read())
-    await message.answer(resp)
-    await _consume(user)
-
-@user_router.message(F.voice)
-@user_router.message(F.audio)
-async def handle_voice(message: Message):
-    user = await _check_access(message)
-    if not user: return
-    await message.bot.send_chat_action(message.from_user.id, ChatAction.TYPING)
-    voice = message.voice or message.audio
-    file = await message.bot.get_file(voice.file_id)
-    path = f"/tmp/voice_{message.from_user.id}.ogg"
-    await message.bot.download_file(file.file_path, path)
-    try:
-        text = await transcribe_audio(path)
-    finally:
-        try: os.remove(path)
-        except OSError: pass
-    if not text:
-        await message.answer(_t("voice_failed")); return
-    await message.answer(f"🎙 <i>{text}</i>")
-    await _reply_to_text(message, text, user)
-
-@user_router.message(F.document)
-async def handle_document(message: Message):
-    user = await _check_access(message)
-    if not user: return
-    doc = message.document
-    name = (doc.file_name or "").lower()
-    if not (name.endswith(".pdf") or name.endswith(".txt")):
-        await message.answer(_t("doc_unsupported")); return
-    await message.bot.send_chat_action(message.from_user.id, ChatAction.TYPING)
-    file = await message.bot.get_file(doc.file_id)
-    file_bytes = await message.bot.download_file(file.file_path)
-    raw = file_bytes.read()
-    try:
-        if name.endswith(".pdf"):
-            import fitz
-            pdf = fitz.open(stream=raw, filetype="pdf")
-            text = "\n".join(p.get_text() for p in pdf)
-            pdf.close()
-        else:
-            text = raw.decode("utf-8", errors="ignore")
-    except Exception as e:
-        await message.answer(f"❌ Hujjatni o'qib bo'lmadi: {e}"); return
-    if not text.strip():
-        await message.answer("Hujjat bo'sh ko'rinadi."); return
-    question = message.caption or "Ushbu hujjatni qisqacha tushuntir va asosiy fikrlarni ajratib ko'rsat."
-    resp = await get_chat_response([
-        {"role": "user", "content": f"Hujjat matni:\n{text[:8000]}\n\nSavol/Topshiriq: {question}"}
-    ])
-    await message.answer(resp)
-    await _consume(user)
-
-async def _reply_to_text(message, text, user=None):
-    user_id = message.from_user.id
-    if user is None:
-        user = await db.get_user(user_id)
-    if text.lower().startswith(("rasm", "image", "yasa", "chiz", "draw")):
-        await message.answer(_t("image_making"))
-        url = await generate_image(text)
-        await message.answer_photo(url)
-        await _consume(user); return
-    await message.bot.send_chat_action(user_id, ChatAction.TYPING)
-    history = await db.get_chat_history(user_id)
-    msgs = [{"role": h["role"], "content": h["content"]} for h in history]
-    msgs.append({"role": "user", "content": text})
-    resp = await get_chat_response(msgs)
-    await message.answer(resp)
-    await db.add_chat_history(user_id, text, resp)
-    await _consume(user)
-
-@user_router.message(F.text)
-async def handle_msg(message: Message):
-    user = await _check_access(message)
-    if not user: return
-    await _reply_to_text(message, message.text, user)
