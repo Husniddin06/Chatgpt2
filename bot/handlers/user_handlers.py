@@ -221,7 +221,7 @@ async def cmd_bonus(message: Message):
 async def cmd_stats(message: Message):
     user = await db.get_user(message.from_user.id) or await _get_or_create(message)
     if user.get("is_premium"):
-        status = f"💎 Premium (gacha: {user.get('premium_until') or '—'})"
+        status = f"💎 Premium (gacha: {user.get("premium_until") or '—'})"
     else:
         status = "🆓 Free"
     await message.answer(_t("stats",
@@ -237,13 +237,23 @@ async def cmd_clear(message: Message):
 
 
 @user_router.message(Command("image"))
-@user_router.message(F.text.in_(BTN_IMAGE))
-async def ask_image(message: Message):
-    await message.answer(_t("image_prompt"))
+@user_router.message(F.text.startswith(("rasm", "image")))
+async def cmd_image(message: Message):
+    user = await _check_access(message)
+    if not user: return
+    if message.text.lower().strip() in ["rasm", "image"]:
+        await message.answer(_t("image_prompt", user.get("language_code", "uz"))); return
+    prompt = message.text[message.text.find(" ") + 1:]
+    await message.bot.send_chat_action(message.from_user.id, ChatAction.UPLOAD_PHOTO)
+    url = await generate_image(prompt)
+    await message.answer_photo(url)
+    await _consume(user)
 
 
 @user_router.message(Command("promo"))
 async def cmd_promo(message: Message, command: CommandObject):
+    user = await _check_access(message)
+    if not user: return
     if not command.args:
         await message.answer(_t("promo_usage")); return
     res = await db.redeem_promo(message.from_user.id, command.args.strip())
@@ -256,7 +266,6 @@ async def cmd_promo(message: Message, command: CommandObject):
         if res["premium_days"]: msg += f"💎 +{res['premium_days']} kun premium\n"
         if res["extra_requests"]: msg += f"➕ +{res['extra_requests']} so'rov"
         await message.answer(msg)
-
 
 @user_router.message(Command("search"))
 async def cmd_search(message: Message, command: CommandObject):
@@ -280,7 +289,6 @@ async def cmd_search(message: Message, command: CommandObject):
     await message.answer(text, disable_web_page_preview=True)
     await _consume(user)
 
-
 @user_router.message(F.photo)
 async def handle_photo(message: Message):
     user = await _check_access(message)
@@ -292,7 +300,6 @@ async def handle_photo(message: Message):
     resp = await analyze_image_and_chat(message.caption, photo_bytes.read())
     await message.answer(resp)
     await _consume(user)
-
 
 @user_router.message(F.voice)
 @user_router.message(F.audio)
@@ -313,7 +320,6 @@ async def handle_voice(message: Message):
         await message.answer(_t("voice_failed")); return
     await message.answer(f"🎙 <i>{text}</i>")
     await _reply_to_text(message, text, user)
-
 
 @user_router.message(F.document)
 async def handle_document(message: Message):
@@ -346,7 +352,6 @@ async def handle_document(message: Message):
     await message.answer(resp)
     await _consume(user)
 
-
 async def _reply_to_text(message, text, user=None):
     user_id = message.from_user.id
     if user is None:
@@ -364,7 +369,6 @@ async def _reply_to_text(message, text, user=None):
     await message.answer(resp)
     await db.add_chat_history(user_id, text, resp)
     await _consume(user)
-
 
 @user_router.message(F.text)
 async def handle_msg(message: Message):
